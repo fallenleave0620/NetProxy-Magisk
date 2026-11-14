@@ -370,6 +370,15 @@
             </span>
             <span class="entry-chevron" aria-hidden="true"></span>
           </a>
+
+          <a class="entry" href="./zashboard/index.html">
+            <img class="entry-icon" src="./zashboard/favicon.svg" alt="" />
+            <span>
+              <span class="entry-title">Zashboard</span>
+              <span class="entry-description">节点、连接与规则</span>
+            </span>
+            <span class="entry-chevron" aria-hidden="true"></span>
+          </a>
         </nav>
 
         <footer>请先启动 sing-box 服务</footer>
@@ -484,6 +493,52 @@
             }));
           }
         }
+
+        // Zashboard 直接读写 Clash API；与 sing-box Dashboard 的预置方式一致，
+        // 打开前把本机入口写进它自己的后端列表，省去每次手填地址与密钥。
+        function configureZashboard() {
+          var listKey = "setup/api-list";
+          var activeKey = "setup/active-uuid";
+          var localBackend = {
+            uuid: "netproxy-clash-api",
+            type: "clash",
+            protocol: "http",
+            host: "127.0.0.1",
+            port: "9999",
+            secondaryPath: "",
+            password: "singbox",
+            label: "NetProxy"
+          };
+          var backends = [];
+
+          try {
+            var saved = JSON.parse(localStorage.getItem(listKey) || "null");
+            if (Array.isArray(saved)) {
+              backends = saved.filter(function (backend) {
+                if (!backend) return false;
+                if (backend.uuid === localBackend.uuid) return false;
+                return !(
+                  String(backend.host) === localBackend.host &&
+                  String(backend.port) === localBackend.port
+                );
+              });
+            }
+          } catch (_) {
+            backends = [];
+          }
+
+          try {
+            localStorage.setItem(
+              listKey,
+              JSON.stringify([localBackend].concat(backends))
+            );
+            localStorage.setItem(activeKey, localBackend.uuid);
+          } catch (_) {
+            // localStorage 不可用时交给面板自身的后端表单处理。
+          }
+        }
+
+        configureZashboard();
 
         if (port === "9090") {
           document.title = "sing-box Dashboard";
